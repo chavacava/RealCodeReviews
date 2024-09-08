@@ -1,0 +1,457 @@
+= Real Code review comments 
+:author: Salvador Cavadini
+:revnumber: 0.1
+:revdate:   TODO
+:doctype: book
+:toc:
+:icons:
+:data-uri:
+:lang: en
+:source-highlighter: rouge
+
+== Introduction
+
+The goal of this short pamphlet is to help you in writing better code by showcasing real code review comments from which we can get valuable insight.
+
+== Comments
+
+=== Naming
+
+Naming things (variables, functions, classes, types, etc.) is a crucial aspect of programming.
+By naming things we define the lexicon of the language in which we will describe our solutions. 
+Variable and type names are the nouns of our lexicon; function names are the verbs.
+
+The simplicity, clarity, and elegance of the solution description heavily depends on the definition of the lexicon.
+
+In this section we show how improving names result in better code.
+
+==== Being precise
+We will start with a small example of how names affect understanding of code.
+Let's try to guess the semantics of the following endpoint of a REST API:
+
+[,console]
+----
+GET /dashboards
+----
+
+From the endpoint signature we can assume it returns _dashboards_.
+Even it isn't very clear what the endpoint will actually return (definitions of dashboards? Dashboard identifiers?) we can concede that it lets us assume that "the endpoint returns all dashboards".
+The endpoint documentation confirms our assumption (and our questions about the nature of the result also):
+
+[,console]
+----
+Retrieves the list of dashboards
+----
+
+The endpoint accepts an optional query parameter `dashboardName` so we can make requests of the form:
+
+[,console]
+----
+GET /dashboards?dashboardName=<some-name>
+----
+
+As is, we naturally think `dashboardName` parameter allows requesting a particular dashboard by its name but, to our 
+surprise, the argument documentations partially contradicts our assumption:
+
+[,console]
+----
+Optional string to retrieve dashboard using the name. Every dashboard containing the string in their name will be returned.
+----
+
+In fact, the parameter is used to filter the result by just keeping _all dashboards whose name **contains**_ the value passed to the parameter.
+
+We have here a clear example of a badly chosen name.
+As is, the parameter name induces the reader to misunderstanding the behavior of the endpoint.
+
+To avoid these kind of situation we could name the parameter differently, for example `nameContains`, or `keepNamesContaining`
+
+[,console]
+----
+GET /dashboards?keepNamesContaining=<some-string>
+----
+
+[NOTE]
+====
+The RESTful way of defining an endpoint to retrieve a particular dashboard is
+[,console]
+----
+GET /dashboards/{dashboardName}
+----
+====
+
+Now, we will study another case of imprecise naming by analyzing the following method signature:
+
+[,java]
+----
+/**
+ * Check pre compiled CommandFormula.
+ *
+ * @param system
+ *      The system.
+ * @param commandFormula
+ *      The pre compiled formula to evaluate.
+ * @return True if success, otherwise false.
+ */
+ private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
+----
+
+Beyond the ambiguity of _check_ (what does it actually checks?) the name and the description of the method differs from the description of the `commandFormula` where the idea of formula _evaluation_ is introduced.
+
+_Checking_ a formula is not the same as _evaluating_ it.
+Thus, to avoid forcing the reader to go and read the full method implementation to know if the function is _checked_ or _evaluated_ we need to remove the ambiguity from the method's documentation.
+In this case, the method checks if a formula complies with all the requirements to be evaluated.
+
+[,java]
+----
+/**
+ * Check if a pre-compiled CommandFormula can be evaluated in the context of a given system.
+ *
+ * @param system
+ *      The system in which the formula will be evaluated.
+ * @param commandFormula
+ *      The pre-compiled formula to check.
+ * @return True if check pass, false otherwise.
+ */
+ private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
+----
+
+By reading the new description of the method and its parameters, a better method name emerges: `canEvaluatePrecompiledFormula` (or just `canEvaluateFormula`?).
+The adoption of the new name will allow, at callers side, things like:
+
+[,java]
+----
+if (canEvaluatePrecompiledFormula(formula, system)) then {...}
+----
+
+That reads better than 
+
+[,java]
+----
+if (checkPreCompiledFormula(system, formula)) then {...}
+----
+
+
+==== Being explicit
+
+With the following example we want to stress the importance of being explicit when naming. 
+
+[,java]
+----
+ /**
+  * Class representing a command check result
+  */
+ public class CommandCheckResult{
+
+ /**
+  * Constructor 
+  * ... 
+  */
+ public CommandCheckResult(CommandCheckResultType type, CommandFormula failingFormula, String failingReason)
+ {
+    //...
+ }
+
+ /**
+  * SUCCESSFUL check constructor
+  */
+ public CommandCheckResult() //<1>
+ {
+  this(CommandCheckResultType.SUCCESSFUL, null, null);
+ }
+
+----
+
+The above simple Java class represents the result of a _check_ operation on commands. 
+Check can succeed or fail. 
+The class provides two constructors: a main one 
+taking several parameters, and a second that is, what we call, a _comfort constructor_: a constructor wrapping a call to the main one by using some default arguments.
+
+In this case, the _comfort constructor_ is provided to facilitate the creation of a _success_ result. 
+But, we know that only because the constructor comment says so. 
+The name of the constructor says nothing on the _success_ nature of the created object; thus, for example, someone reading code where this constructor is used will have no clue about the _success_ nature of the returned object, he/she will, for example, read:
+
+[,java]
+----
+{
+    //...
+    return CommandCheckResult();
+}
+----
+
+To resume, the call to `CommandCheckResult()` is ambiguous because nothing in the call lets us know if we will get a _success_ or a _fail_ result. 
+How to remove the ambiguity?
+
+One possibility is to rename the constructor, but in Java, that is not possible, constructors are named after the class name.
+
+We can add a parameter to the constructor to let the caller explicitly set the nature (success or fail) of the objet to be created. 
+For example something that lets write calls like:
+
+[,java]
+----
+{
+    //...
+    return CommandCheckResult(CommandCheckResultType.SUCCESSFUL);
+}
+----
+
+The call expression explicitly says "create a successful command check result".
+
+The problem with this solution is that the new constructor allows to create incomplete _fail_ check results.
+Incomplete because, a fail result must indicate a _failing formula_ and a _failing reason_.
+Then, callers will be forced to write things like:
+
+[,java]
+----
+{
+    //...
+    CommandCheckResult result = CommandCheckResult(CommandCheckResultType.FAIL);
+    result.setFailingFormula(someFormula);
+    result.setFailingReason(someReason);
+    return result;
+}
+----
+
+That pattern of object creation, as we will see later,  is very error prone.
+Moreover, the patter is less comfortable than just calling the main constructor and passing all its arguments.
+
+You may propose to use the comfort constructor as `CommandCheckResult(CommandCheckResultType.SUCCESSFUL)` to create success results and the main constructor for fail results.
+The problem is still the same, we can make a bad use of the comfort constructor to build incomplete fail results.
+A good written class should avoid improper use of its methods.
+
+So, what to do if we can't rename the constructor, nor provide a safe-to-use comfort method?
+One possible solution is to take advantage of the fact that all success result objects are equal.
+Then the class can provide a public constant for success results.
+
+[,java]
+----
+ public class CommandCheckResult{
+ // ...
+
+ /** SUCCESSFUL result object */
+ public static final CommandCheckResult SUCCESSFUL_RESULT = new CommandCheckResult(CommandCheckResultType.SUCCESSFUL, null, null);
+
+----
+
+NOTE: This is an example on how refactoring code is a virtuous circle of code quality amelioration.
+One refactoring opens the way for other refactoring and so on.
+
+As a corollary, we can say that implicit or tacit properties, behaviors, etc. must be totally avoided when coding.
+Be explicit!
+
+==== Descriptive names
+Sometimes, names use not well defined terms and create ambiguity by letting readers imagine their meaning.
+
+The following, is an example of such a case:
+
+[,java]
+----
+ /** 
+  * Clones and identifies all repositories specified in configuration. 
+  */ 
+  private void cloneAndIdentifyRepositories() {...}
+----
+
+The name `cloneAndIdentifyRepositories`, besides being of the form _doThis**And**DoThat_, uses the not precise term _identifies_.
+In the context of the example, an application working with git repositories, we can understand what _clone ... repository_ means, but what about _identify ... repository_?
+What means to _identify_ a repository (after cloning it?)? 
+
+These kind of bad naming need to be caught in code reviews because at that time it is still possible to talk with the author of the code and ask her/him for clarifications. 
+
+So, we asked the code author about the _identifying_ part of the method name and his response was: 
+
+> "_identifying_" is extracting all the different names that can map to this repository. For example: for the repository app-encode the following dependency names can point to it: app-encodecloud, encode-client.
+
+While listening his explanation, the idea of _alias_ shown up.
+It seems that _identifying_ a repository means something like calculating (_extracting_ in the words of the code author) all possible _alias of a repository_.
+A better method name can now emerge: ` cloneRepositoriesAndCalculateAlias`
+
+The new name is better than the original one but, being honest, we can't say "_what a nice method name!_"
+
+Usually, when we struggle to find a good method name we need to check if the root of the problem is not the functional perimeter we assigned to the method itself.
+
+In our case, `cloneRepositoriesAndCalculateAlias` is somewhat crying us "_I'm responsible of *two* things!_", and that is incompatible with the https://en.wikipedia.org/wiki/Single-responsibility_principle[Single responsibility principle].
+These cries are materialized by the *And* in its name.
+
+NOTE: An *And* in a method name is usually a symptom of design problems.
+
+Therefore, to go further in our quest for a better method name we could decide to split the method in two: `cloneRepositories`, and `getRepositoriesAlias`.
+
+Again, a refactoring created the opportunity for new refactoring.
+
+==== Avoid shooting your foot with Null 
+
+A null reference is without doubt a _billion-dollar mistake_ as it was https://www.youtube.com/watch?v=ybrQvs4x0Ps[described by Tony Hoare], the guy that actually invented null in 1965!
+
+Most popular languages still include the null reference concept therefore they are, by design, helping you to shoot your foot.
+So, here are some tips on how to avoid using null.
+
+Of course, th first thing to do is: **do not create null references**.
+I sounds obvious, but we are usually fooled by the simplicity of creating null references (the very same simplicity that pushed Tony Hoare to include them in https://en.wikipedia.org/wiki/ALGOL[ALGOL] more than half a century ago)
+
+Not creating null references can be re-stated as: **never ever make your functions return null**.
+
+A first example of a function we reviewed:
+
+[,java]
+----
+public CalibrationDirection getCalibrationDirection(CalibrationBase calibration) {		
+    if (calibration == null) 
+    {			
+        return null;
+    }
+    if (calibration instanceof Calibration {			
+        // the calibration direction is defined directly			
+        return calibration.calDirection;		
+    } else if (calibration instanceof CompoundCalibration) {			
+        // return the direction for the compound calibration			
+        return getCompoundCalibrationDirection((CompoundCalibration) calibration);		
+    } else if (calibration instanceof ConditionalCalibration) {			
+        // return the direction of the conditional calibration			
+        return getConditionalCalibrationDirection((ConditionalCalibration) calibration);		
+    }				
+    return null;	
+}
+----
+
+The method code was that, pure code without any documentation even if it is a public method.
+
+NOTE: Always provide documentation for public identifiers (methods, constants, types, etc.)
+
+The single way of knowing this method can return a null reference is by reading its body, thus chances are high that some caller of the method will not check for a null response and the _null pointer exception_ will hit us at runtime.
+
+How to solve that?
+In this actual case, it is very simple.
+`CalibrationDirection` is an enumeration thus it is easy to add a new direction: `unknown` (or `undefined`)
+
+Then the method returns the default value and callers use it without needing to keep an eye on potential null references.
+
+The refactored code will be something in the lines of
+
+[,java]
+----
+/**
+ * Yields the direction of the given calibration.
+ *
+ * @param calibration
+ *      The calibration from which extract its direction.
+ * @return
+ *      A calibration direction. If direction can not be extracted, then it will return the UNKNOWN direction.
+ */
+public CalibrationDirection getCalibrationDirection(CalibrationBase calibration) {		
+    if (calibration == null) 
+    {			
+        return CalibrationDirection.UNKNOWN;
+    }
+    if (calibration instanceof Calibration {			
+        // the calibration direction is defined directly			
+        return calibration.calDirection;		
+    } else if (calibration instanceof CompoundCalibration) {			
+        // return the direction for the compound calibration			
+        return getCompoundCalibrationDirection((CompoundCalibration) calibration);		
+    } else if (calibration instanceof ConditionalCalibration) {			
+        // return the direction of the conditional calibration			
+        return getConditionalCalibrationDirection((ConditionalCalibration) calibration);		
+    }				
+    return CalibrationDirection.UNKNOWN;	
+}
+----
+
+Okay, that was easy.
+The returned type was an enumeration and we were the owners of the enumeration thus we were able to modify it.
+
+Lets see another example.
+
+[,java]
+----
+  /**
+   * Convert a 10-byte GPS date (dflt origin is 1980-01-06) to a calendar date.
+   * 
+   * @param pDate
+   *          the GPS date to convert
+   * @return the date in calendar format
+   */
+  public byte[] gpsDateToCalendarDate(final byte[] pDate)
+  {
+    try
+    {
+      return mService.gpsDateToCalendarDate(pDate);
+    }
+    catch (DateServiceException lE)
+    {
+      Logger.trace(DATE_PLUGIN_BAD_DATE_RECEIVED, lE.toString(), mServiceFactory);
+      return null;
+    }
+  }
+  ----
+
+================
+
+=====use usual acronyms/abbreviations
+
+
+$ref: '#/components/schemas/RfcDate'
+
+should be ReferenceDate or RefDate
+=====Document expected date formats (and units e.g. for timeouts)
+
+
+
+ /**
+ 
+* Sets extrapolation start date.
+ 
+*
+ 
+* @param extrapolationStartDate
+ 
+*
+ 
+ 
+the extrapolation start date
+ 
+*/
+ public void setExtrapolationStartDate(String extrapolationStartDate)
+ {
+ 
+ this.extrapolationStartDate = extrapolationStartDate;
+ }
+===Use spell checkers!
+==========Use documenting identifiers (example 1)
+
+ private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+
+ 
+ String newArtefactName = newArtefact.getName();
+ 
+ if (artefact.getName().equals(newArtefactName))
+ 
+ {
+ 
+ 
+ return true;
+ 
+ }
+ 
+ if (artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/"))
+ 
+ {
+ 
+ 
+ return true;
+ 
+ }
+ 
+ return false;
+can be replaced by
+
+
+ private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+	final boolean haveSameName = artefact.getName().equals(newArtefact.getName());	final boolean haveSameExportFolder = artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/";		return haveSameName || haveSameExportFolder;
+Notice that
+isArtefactToReplace could be
+shouldReplaceArtefact or mustReplaceArtifact
+=====Constructors must return ready to use objects (all mandatory fields filled)
+Example: NPE with `phase` = Null...
+
+ private boolean isFeedbackTracked(String phase) { return phase.equals(COMPLETION) || phase.equals(PUS1_PREFIX + pus1AckSignal) || phase.equals(PUS1_PREFIX + COMPLETION); }But phase was supposed to be not null... inisFeedbackTracked(cmdExecutionReport.getPhase())In fact it was null because the CER was, in one of many places, built asCommandExecutionReport feedback = new CommandExecutionReport(); feedback.setCorrelationId(sendingContext.getId()); feedback.setExecutionStatus(status); feedback.setExecutionType(type); feedback.setRelations(new Relations().parentId(sendingContext.getParentId()).childrenIds(sendingContext.getChildrenIds()));Thus to fix the NPE the dev added feedback.setPhaseGroup(PhaseGroup.PRESENDING); feedback.setPhase(PHASE_TYPE);
+

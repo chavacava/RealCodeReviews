@@ -1,0 +1,2 @@
+[] use linters (semgrep)
+[] comments are functions you can factor out
