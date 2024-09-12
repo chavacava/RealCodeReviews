@@ -455,3 +455,14 @@ Example: NPE with `phase` = Null...
 
  private boolean isFeedbackTracked(String phase) { return phase.equals(COMPLETION) || phase.equals(PUS1_PREFIX + pus1AckSignal) || phase.equals(PUS1_PREFIX + COMPLETION); }But phase was supposed to be not null... inisFeedbackTracked(cmdExecutionReport.getPhase())In fact it was null because the CER was, in one of many places, built asCommandExecutionReport feedback = new CommandExecutionReport(); feedback.setCorrelationId(sendingContext.getId()); feedback.setExecutionStatus(status); feedback.setExecutionType(type); feedback.setRelations(new Relations().parentId(sendingContext.getParentId()).childrenIds(sendingContext.getChildrenIds()));Thus to fix the NPE the dev added feedback.setPhaseGroup(PhaseGroup.PRESENDING); feedback.setPhase(PHASE_TYPE);
 
+=====================
+Require excactly what you need. Here we require the full CfdpStubConfig but only use config.getEntities().getDownload()
+public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
+  {
+    super(config.getEntities().getDownload().getLocalFilestorePath(), config.getEntities().getDownload().getRemoteFilestorePath(),
+        finishedTrnsactionsService);
+    super(config.getEntities().getDownload().getEntityId(), config.getEntities().getDownload().getLocalFilestorePath(),
+        config.getEntities().getDownload().getRemoteFilestorePath(), finishedTrnsactionsService);
+  }
+
+
