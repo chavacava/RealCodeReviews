@@ -313,17 +313,17 @@ public CalibrationDirection getCalibrationDirection(CalibrationBase calibration)
 }
 ----
 
-The method code was that, pure code without any documentation even if it is a public method.
+The method code was that, pure code without any documentation even if it's a public method.
 
 NOTE: Always provide documentation for public identifiers (methods, constants, types, etc.)
 
-The single way of knowing this method can return a null reference is by reading its body, thus chances are high that some caller of the method will not check for a null response and the _null pointer exception_ will hit us at runtime.
+The single way of being aware this method can return a null reference is by reading its body, thus chances are high that some caller of the method will not check for a null response and the _null pointer exception_ will hit us at runtime.
 
 How to solve that?
 In this actual case, it is very simple.
-`CalibrationDirection` is an enumeration thus it is easy to add a new direction: `unknown` (or `undefined`)
+`CalibrationDirection` is an enumeration thus it is easy to add a new element to the enumeration: `unknown` (or `undefined`)
 
-Then the method returns the default value and callers use it without needing to keep an eye on potential null references.
+Then the method, instead of returning null, it returns the new element and callers use it without needing to keep an eye on potential null references.
 
 The refactored code will be something in the lines of
 
@@ -359,7 +359,7 @@ public CalibrationDirection getCalibrationDirection(CalibrationBase calibration)
 Okay, that was easy.
 The returned type was an enumeration and we were the owners of the enumeration thus we were able to modify it.
 
-Lets see another example.
+Lets see another example:
 
 [,java]
 ----
@@ -383,6 +383,21 @@ Lets see another example.
     }
   }
   ----
+
+Here, the null result is used to signal something bad happened.
+That is not a good way of handling errors (moreover, here we hide an exception under the carpet. Sad).
+If something bad happens then signal the caller by returning an error or an exception.
+
+How to proceed?
+Well here we have some choices:
+. take advantage on the fact that the return type is a collection (array, list, ...) and return an empty collection. Then let callers to deal with it.
+. return a default date, maybe the origin date.
+. throw a proper exception in case of error.
+
+The decision depends on many factors but one thing is clear: we can not let that method as is.
+
+NOTE: Never return null references when the return type is a collection, return an empty collection instead.
+
 
 ================
 
