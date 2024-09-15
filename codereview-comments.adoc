@@ -8,6 +8,7 @@
 :data-uri:
 :lang: en
 :source-highlighter: rouge
+:sectnums:
 
 == Introduction
 
@@ -285,7 +286,7 @@ A null reference is without doubt a _billion-dollar mistake_ as it was https://w
 Most popular languages still include the null reference concept therefore they are, by design, helping you to shoot your foot.
 So, here are some tips on how to avoid using null.
 
-Of course, th first thing to do is: **do not create null references**.
+Of course, the first thing to do is: **do not create null references**.
 I sounds obvious, but we are usually fooled by the simplicity of creating null references (the very same simplicity that pushed Tony Hoare to include them in https://en.wikipedia.org/wiki/ALGOL[ALGOL] more than half a century ago)
 
 Not creating null references can be re-stated as: **never ever make your functions return null**.
@@ -313,7 +314,7 @@ public CalibrationDirection getCalibrationDirection(CalibrationBase calibration)
 }
 ----
 
-The method code was that, pure code without any documentation even if it's a public method.
+The method's code was just that, pure code without any documentation even if it's a public method.
 
 NOTE: Always provide documentation for public identifiers (methods, constants, types, etc.)
 
@@ -382,7 +383,7 @@ Lets see another example:
       return null;
     }
   }
-  ----
+----
 
 Here, the null result is used to signal something bad happened.
 That is not a good way of handling errors (moreover, here we hide an exception under the carpet. Sad).
@@ -398,79 +399,247 @@ The decision depends on many factors but one thing is clear: we can not let that
 
 NOTE: Never return null references when the return type is a collection, return an empty collection instead.
 
+==== Do not try to be creative, use known acronyms and abbreviations
 
-================
+Why trying to invent new abbreviations?
 
-=====use usual acronyms/abbreviations
+We found the following line in an OpenAPI definition:
 
-
+[,yaml]
+----
 $ref: '#/components/schemas/RfcDate'
+----
 
-should be ReferenceDate or RefDate
-=====Document expected date formats (and units e.g. for timeouts)
+That simple line is somewhat ironic.
+OpenAPI uses _ref_ to say _reference_.
+Nothing new, almost everybody uses _ref_ to abbreviate _reference_.
+I say almost everybody because, as you can see in the example above, someone tried to be creative by using _rfc_ as abbreviation of _reference_, in the very same line!
+
+Why not writing `RefDate`, or better, `ReferenceDate`?
+We are in the XXI century, we do not have storage restrictions that push us to make the economy of a few characters in our source code.
+
+We find something similar in the documentation of the function `gpsDateToCalendarDate` used in the section about (not) using null reference:
+
+[,java]
+----
+  /**
+   * Convert a 10-byte GPS date (dflt origin is 1980-01-06) to a calendar date.
+   * 
+   * @param pDate
+   *          the GPS date to convert
+   * @return the date in calendar format
+   */
+---- 
+
+Did you spot the `dflt` abbreviation of _default_ in the first line?
+
+Just write the full words.
+
+==== Be precise when documenting
+
+Even if the best documentation is the names we give to our data elements; sometimes it is nice and necessary to complement with companying comments.
+
+For example, in the following declaration, even if the parameter name is well chosen   
+
+[,java]
+----
+ public void setExtrapolationStartDate(String extrapolationStartDate) { ... }
+----
+
+is not enough to fully understand what callers are expected to pass as argument.
+
+The original code provides a comment:
+
+[,java]
+----
+/** 
+ * Sets extrapolation start date.
+ *
+ * @param extrapolationStartDate
+ *  the extrapolation start date
+ */
+ public void setExtrapolationStartDate(String extrapolationStartDate) { ... }
+----
+
+Thanks! That is useful... forThoseWhoCaNotReadCamelCase.
+
+What is lacking is information on the format of the date.
+Sure, it is a string, but what format should have string dates when calling the function?
+
+A better documentation could be something like:
+
+[,java]
+----
+/** 
+ * Sets extrapolation start date.
+ *
+ * @param extrapolationStartDate
+ *  the extrapolation start date in ISO 8601-1:2019 compatible format YYYYMMDDThhmmss.sss
+ */
+ public void setExtrapolationStartDate(String extrapolationStartDate) { ... }
+----
 
 
 
- /**
- 
-* Sets extrapolation start date.
- 
-*
- 
-* @param extrapolationStartDate
- 
-*
- 
- 
-the extrapolation start date
- 
-*/
- public void setExtrapolationStartDate(String extrapolationStartDate)
- {
- 
- this.extrapolationStartDate = extrapolationStartDate;
- }
-===Use spell checkers!
-==========Use documenting identifiers (example 1)
+TODO: example with timeout declaration not specifying the unit (ms, s, ...) 
 
- private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+==== Use identifiers as documentation 
 
- 
- String newArtefactName = newArtefact.getName();
- 
- if (artefact.getName().equals(newArtefactName))
- 
- {
- 
- 
- return true;
- 
- }
- 
- if (artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/"))
- 
- {
- 
- 
- return true;
- 
- }
- 
- return false;
-can be replaced by
+The goal of documentation is to help readers understand the code.
+The best documentation of code is the code itself.
+As we said before, when  programming we create our own vocabulary to describe the solution we found for the problem we are resolving with the program.
+That vocabulary is composed by the names we define: variables are nouns, functions are verbs, and we write sentences with them.
+Better are the nouns and verbs, more understandable our sentences will be.
+Needing to write documentation can be seen as the proof of our inability to describe our solution with the language we created.
 
+===== Documenting variables
 
- private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
-	final boolean haveSameName = artefact.getName().equals(newArtefact.getName());	final boolean haveSameExportFolder = artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/";		return haveSameName || haveSameExportFolder;
-Notice that
-isArtefactToReplace could be
-shouldReplaceArtefact or mustReplaceArtifact
-=====Constructors must return ready to use objects (all mandatory fields filled)
-Example: NPE with `phase` = Null...
+Naming things is very powerful so why not using that power?
+Why letting the readers of our code to guess, for example, what expressions means?
 
- private boolean isFeedbackTracked(String phase) { return phase.equals(COMPLETION) || phase.equals(PUS1_PREFIX + pus1AckSignal) || phase.equals(PUS1_PREFIX + COMPLETION); }But phase was supposed to be not null... inisFeedbackTracked(cmdExecutionReport.getPhase())In fact it was null because the CER was, in one of many places, built asCommandExecutionReport feedback = new CommandExecutionReport(); feedback.setCorrelationId(sendingContext.getId()); feedback.setExecutionStatus(status); feedback.setExecutionType(type); feedback.setRelations(new Relations().parentId(sendingContext.getParentId()).childrenIds(sendingContext.getChildrenIds()));Thus to fix the NPE the dev added feedback.setPhaseGroup(PhaseGroup.PRESENDING); feedback.setPhase(PHASE_TYPE);
+Let's analyze the following simple example:
+
+[,java]
+----
+private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+{
+    String newArtefactName = newArtefact.getName();
+    if (artefact.getName().equals(newArtefactName))
+    {
+        return true;
+    }
+ 
+    if (artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/"))
+    {
+        return true;
+    }
+
+    return false;
+}
+----
+
+We can understand the goal of the function from its signature.
+It will tell us if a given artifact, whatever that is, must be replaced or not by the new one.
+But by reading the function body, it's not clear how the function decides when an artifact should be replaced or not.
+As readers we are forced to analyze and understand the details of the conditional expressions involved in the decision. 
+Sad.
+
+An easier to read implementation of the function can be obtained by using what we call _documenting variables_.
+
+_Documenting variables_ are variables we create with the purpose of giving a name (a mean) to expressions in our programs.
+In this case, we will name the conditional expressions used as the condition in both `if-then` statements.
+By doing so, we will explain to readers the meaning of these expressions.
+
+[,java]
+----
+private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+{
+	final boolean haveSameName = artefact.getName().equals(newArtefact.getName());
+    final boolean haveSameExportFolder = artefact.getExportFolder() != null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/";
+    
+    return haveSameName || haveSameExportFolder;
+}
+----
+
+From that implementation we, as readers, can even skip reading all lines but the last and clearly understand that an artifact must be replaced when the new one has either the same name or the same exporter folder.
+
+That is the power of _documenting variables_.
+Use it.
+
+Side note: the function could be named `shouldReplaceArtefact` or `mustReplaceArtifact`. 
+By naming like that, callers could write `if (mustReplaceArtifact(...)) then ...` that reads slightly better than `if (isArtefactToReplace(...)) then ...`
+
+===== Replace comments by function calls
+
+ TODO
+
+==== Create ready-to use objects
+
+Object constructors must return ready-to use valid objects with all mandatory fields initialized.
+By doing so we avoid subtle bugs.
+
+Let's illustrate what kind of problems we can encounter if our objects are not valid from the instant they are created.
+
+We received a bug report: null pointer exception at
+
+[,java]
+----
+private boolean isFeedbackTracked(String phase)
+{
+    return phase.equals(COMPLETION) || phase.equals(PUS1_PREFIX + COMPLETION); 
+}
+----
+
+Sometimes, the parameter `phase` is null then the call `phase.equals()` fails.
+But `phase` is supposed not to be null!
+
+How callers set the `phase` argument?
+We found only one call site:
+
+[,java]
+----
+{
+    ...
+    if (isFeedbackTracked(feedback.getPhase())) then
+    ... 
+}
+----
+
+Where that `feedback` comes from?
+Well, it's a parameter of the caller function and, no luck for us, it's constructed in many places of the code base.
+
+How does `Feedback` object constructor look like?
+
+[,java]
+----
+public Feedback()
+{
+    // empty constructor
+}
+----
+
+So, the constructor returns a `Feedback` object where none of its fields was initialized!
+The initialization of the fields is delegated to the users of the constructors, whom are forced to "manually" set each one of the object fields:
+
+[,java]
+----
+...
+Feedback feedback = new Feedback();
+feedback.setCorrelationId(...); 
+feedback.setExecutionStatus(...);
+feedback.setExecutionType(...); 
+feedback.setRelations(...);
+...
+----
+
+That's very, very fragile.
+Pray not to forget one field.
+Bugs are waiting around the corner.
+
+It is impossible to enforce the proper initialization of all mandatory fields of the object.
+How to be sure we set all required fields at every place where a `Feedback` is created?
+
+In fact, the origin of our null pointer exception was the later addition of the new mandatory field `phase` to the `Feedback` object.
+
+Even if care was taken, we missed updating one place where `Feedback` objects are created and did not added the `feedback.setPhase(...);` to the list of calls to `Feedback`'s setters. 
+Then, some objects were not fully initialized and the null pointer exception was there ready to hit us at runtime.
+Human error.
+
+The solution is letting no place for human errors.
+How?
+The compiler is, always, our best friend: we need to make the compiler force us to create valid, ready to use, objects.
+That is very easy: make constructors demand all necessary information to build complete objects.
+
+NOTE: you may argue that some frameworks requires defining empty constructors with corresponding setters. That's okay, but remember: nothing prevents you to define and use a full fledged constructor.
+
+The general approach can be stated as: avoid defining objects able to transit multiple states.
+Try creating immutable objects.
+Immutability always pays.
+
+NOTE: if your object has an `init` method your are in trouble. Setters are another potential symptom of stateful objects.
 
 =====================
+===Use spell checkers!
 Require excactly what you need. Here we require the full CfdpStubConfig but only use config.getEntities().getDownload()
 public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
   {
