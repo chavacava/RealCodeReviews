@@ -253,10 +253,10 @@ The following, is an example of such a case:
 ----
 
 The name `cloneAndIdentifyRepositories`, besides being of the form _doThis**And**DoThat_, uses the not precise term _identifies_.
-In the context of the example, an application working with git repositories, we can understand what _clone ... repository_ means, but what about _identify ... repository_?
-What means to _identify_ a repository (after cloning it?)? 
+In the context of the example, an application working with git repositories, we can understand what _clone_ a repository means, but what about _identify_?
+What is to _identify_ a repository (after cloning it?)? 
 
-These kind of bad naming need to be caught in code reviews because at that time it is still possible to talk with the author of the code and ask her/him for clarifications. 
+These kind of bad naming need to be caught in code reviews because at that time it's still possible to discuss with the author of the code and ask her/him for clarifications. 
 
 So, we asked the code author about the _identifying_ part of the method name and his response was: 
 
