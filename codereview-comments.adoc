@@ -672,15 +672,43 @@ Immutability always pays.
 
 NOTE: if your object has an `init` method your are in trouble. Setters are another potential symptom of stateful objects.
 
-=====================
-===Use spell checkers!
-Require excactly what you need. Here we require the full CfdpStubConfig but only use config.getEntities().getDownload()
+==== Do not ask for things you will not use
+
+Functions must require, in form of parameters, the strictly necessary data.
+If not, unnecessary cuppling is created between the caller and the callee.
+That unnecessary cuppling will have negative consequences in various aspects of the code like testeability, maintenability, and reusability.
+
+Let's analyze an example of a low quality function definition:
+
+[,java]
+----
 public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
-  {
-    super(config.getEntities().getDownload().getLocalFilestorePath(), config.getEntities().getDownload().getRemoteFilestorePath(),
-        finishedTrnsactionsService);
+{
     super(config.getEntities().getDownload().getEntityId(), config.getEntities().getDownload().getLocalFilestorePath(),
         config.getEntities().getDownload().getRemoteFilestorePath(), finishedTrnsactionsService);
-  }
+}
+----
+
+Here we require the full `CfdpStubConfig` object but we only use some properties `config.getEntities().getDownload()`.
+
+Let's take a look on how that function signature hinders testeability, reusability and redeability of the function.
+In order to test this function, a constructor in fact, we will need to build a `CfdpStubConfig` object and that, depending on the size and complexity of the object can be a challenging task.
+In the same line, every caller of the function must provide a full `CfdpStubConfig` object, this reduces de likely of being able to reuse this method.
+As you might already experienced when reading the above code it is not very easy to followg what the code does.
+To better highlight all these points let`s write a better definition of the function.
+
+[,java]
+----
+public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePath, String remoteFilestorePath, FinishedTransactionsService finishedTrnsactionsService)
+{
+    super(entityId, localFilestorePath, remoteFilestorePath, finishedTrnsactionsService);
+}
+----
+
+We can agree, that this new version of the function is easier to test, understand and reuse.
+
+=====================
+===Use spell checkers!
+
 
 
