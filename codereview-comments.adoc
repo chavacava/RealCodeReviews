@@ -401,6 +401,38 @@ The decision depends on many factors but one thing is clear: we can not let that
 
 NOTE: Never return null references when the return type is a collection, return an empty collection instead.
 
+Another easy to avoid null return is that of functions returning strings.
+For example, the following function returns a null string reference when the given user has not a defined role:
+
+[,java]
+----
+  /**
+   * Get the role of a user.
+   *
+   * @param userId
+   *     user Id.
+   * @return the role of the user.
+   * @throws KeycloakAccessException
+   *     throw when error met talking with keycloak
+   */
+  public String getUserRole(String userId) throws KeycloakAccessException
+  {
+    List<LinkedHashMap> groups = (List<LinkedHashMap>) keycloakClient.getUserGroups(keycloakConfig.getRealm(), userId, ...);
+    if (groups.size() == 0)
+    {
+      return null;
+    }
+    // ...
+  }
+----
+
+As usual, the function provides no warning on the possible null return in its documentation.
+
+To avoid returning null, these kind of functions can return an actual string.
+The returned string must have a special meaning.
+For example, in the above case, the return value in the case of an user without defined role could be the string `"UNKNOWN"` (or `"UNDEFINED"`, or `"NONE"`)
+Sometimes the empty string is a also good candidate.
+
 ==== Do not try to be creative, use known acronyms and abbreviations
 
 Why trying to invent new abbreviations?
