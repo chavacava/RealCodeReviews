@@ -96,7 +96,7 @@ Now, we will study another case of imprecise naming by analyzing the following m
  private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
 ----
 
-Beyond the ambiguity of _check_ (what does it actually checks?) the name and the description of the method differs from the description of the `commandFormula` where the idea of formula _evaluation_ is introduced.
+Beyond the ambiguity of _check_ (what does it actually check?) the name and the description of the method differs from the description of the `commandFormula` where the idea of formula _evaluation_ is introduced.
 
 _Checking_ a formula is not the same as _evaluating_ it.
 Thus, to avoid forcing the reader to go and read the full method implementation to know if the function is _checked_ or _evaluated_ we need to remove the ambiguity from the method's documentation.
@@ -164,8 +164,7 @@ With the following example we want to stress the importance of being explicit wh
 
 The above simple Java class represents the result of a _check_ operation on commands. 
 Check can succeed or fail. 
-The class provides two constructors: a main one 
-taking several parameters, and a second that is, what we call, a _comfort constructor_: a constructor wrapping a call to the main one by using some default arguments.
+The class provides two constructors: a main one taking several parameters, and a second that is, what we call, a _comfort constructor_: a constructor wrapping a call to the main one by using some default arguments.
 
 In this case, the _comfort constructor_ is provided to facilitate the creation of a _success_ result. 
 But, we know that only because the constructor comment says so. 
@@ -185,7 +184,7 @@ How to remove the ambiguity?
 One possibility is to rename the constructor, but in Java, that is not possible, constructors are named after the class name.
 
 We can add a parameter to the constructor to let the caller explicitly set the nature (success or fail) of the objet to be created. 
-For example something that lets write calls like:
+For example something that let's write calls like:
 
 [,java]
 ----
@@ -212,14 +211,14 @@ Then, callers will be forced to write things like:
 }
 ----
 
-That pattern of object creation, as we will see later,  is very error prone.
+That pattern of object creation, as we will see later, is very error prone.
 Moreover, the patter is less comfortable than just calling the main constructor and passing all its arguments.
 
 You may propose to use the comfort constructor as `CommandCheckResult(CommandCheckResultType.SUCCESSFUL)` to create success results and the main constructor for fail results.
 The problem is still the same, we can make a bad use of the comfort constructor to build incomplete fail results.
 A good written class should avoid improper use of its methods.
 
-So, what to do if we can't rename the constructor, nor provide a safe-to-use comfort method?
+So, what to do if we can't rename the constructor, nor provide a safe-to-use comfort constructor?
 One possible solution is to take advantage of the fact that all success result objects are equal.
 Then the class can provide a public constant for success results.
 
@@ -230,11 +229,10 @@ Then the class can provide a public constant for success results.
 
  /** SUCCESSFUL result object */
  public static final CommandCheckResult SUCCESSFUL_RESULT = new CommandCheckResult(CommandCheckResultType.SUCCESSFUL, null, null);
-
 ----
 
 NOTE: This is an example on how refactoring code is a virtuous circle of code quality amelioration.
-One refactoring opens the way for other refactoring and so on.
+One refactoring paves the way for other refactoring and so on.
 
 As a corollary, we can say that implicit or tacit properties, behaviors, etc. must be totally avoided when coding.
 Be explicit!
@@ -264,7 +262,7 @@ So, we asked the code author about the _identifying_ part of the method name and
 
 While listening his explanation, the idea of _alias_ shown up.
 It seems that _identifying_ a repository means something like calculating (_extracting_ in the words of the code author) all possible _alias of a repository_.
-A better method name can now emerge: ` cloneRepositoriesAndCalculateAlias`
+A better method name can now emerge: `cloneRepositoriesAndCalculateAlias`
 
 The new name is better than the original one but, being honest, we can't say "_what a nice method name!_"
 
@@ -322,7 +320,7 @@ The single way of being aware this method can return a null reference is by read
 
 How to solve that?
 In this actual case, it is very simple.
-`CalibrationDirection` is an enumeration thus it is easy to add a new element to the enumeration: `unknown` (or `undefined`)
+`CalibrationDirection` is an enumeration thus it's easy to add a new element to the enumeration: `unknown` (or `undefined`)
 
 Then the method, instead of returning null, it returns the new element and callers use it without needing to keep an eye on potential null references.
 
@@ -386,13 +384,17 @@ Lets see another example:
 ----
 
 Here, the null result is used to signal something bad happened.
-That is not a good way of handling errors (moreover, here we hide an exception under the carpet. Sad).
-If something bad happens then signal the caller by returning an error or an exception.
+That is not a good way of handling errors (moreover, here we hide an exception under the carpet. So sad).
+
+NOTE: If something bad happens in amethod call then signal the caller by returning an explicit error or an exception.
 
 How to proceed?
 Well here we have some choices:
+
 . take advantage on the fact that the return type is a collection (array, list, ...) and return an empty collection. Then let callers to deal with it.
+
 . return a default date, maybe the origin date.
+
 . throw a proper exception in case of error.
 
 The decision depends on many factors but one thing is clear: we can not let that method as is.
@@ -413,7 +415,7 @@ $ref: '#/components/schemas/RfcDate'
 That simple line is somewhat ironic.
 OpenAPI uses _ref_ to say _reference_.
 Nothing new, almost everybody uses _ref_ to abbreviate _reference_.
-I say almost everybody because, as you can see in the example above, someone tried to be creative by using _rfc_ as abbreviation of _reference_, in the very same line!
+Almost everybody because, as you can see in the example above, someone tried to be creative by using _rfc_ as abbreviation of _reference_, in the very same line!
 
 Why not writing `RefDate`, or better, `ReferenceDate`?
 We are in the XXI century, we do not have storage restrictions that push us to make the economy of a few characters in our source code.
@@ -461,10 +463,10 @@ The original code provides a comment:
  public void setExtrapolationStartDate(String extrapolationStartDate) { ... }
 ----
 
-Thanks! That is useful... forThoseWhoCaNotReadCamelCase.
+Thanks! That's useful... forThoseWhoCannotReadCamelCase.
 
 What is lacking is information on the format of the date.
-Sure, it is a string, but what format should have string dates when calling the function?
+Sure, it's a string, but what format should have string dates when calling the function?
 
 A better documentation could be something like:
 
@@ -487,7 +489,7 @@ TODO: example with timeout declaration not specifying the unit (ms, s, ...)
 
 The goal of documentation is to help readers understand the code.
 The best documentation of code is the code itself.
-As we said before, when  programming we create our own vocabulary to describe the solution we found for the problem we are resolving with the program.
+As we said before, when programming we create our own vocabulary to describe the solution we found for the problem at hand.
 That vocabulary is composed by the names we define: variables are nouns, functions are verbs, and we write sentences with them.
 Better are the nouns and verbs, more understandable our sentences will be.
 Needing to write documentation can be seen as the proof of our inability to describe our solution with the language we created.
@@ -522,12 +524,12 @@ We can understand the goal of the function from its signature.
 It will tell us if a given artifact, whatever that is, must be replaced or not by the new one.
 But by reading the function body, it's not clear how the function decides when an artifact should be replaced or not.
 As readers we are forced to analyze and understand the details of the conditional expressions involved in the decision. 
-Sad.
+So sad.
 
 An easier to read implementation of the function can be obtained by using what we call _documenting variables_.
 
 _Documenting variables_ are variables we create with the purpose of giving a name (a mean) to expressions in our programs.
-In this case, we will name the conditional expressions used as the condition in both `if-then` statements.
+In this case, we will name the conditional expressions used in both `if-then` statements in the method.
 By doing so, we will explain to readers the meaning of these expressions.
 
 [,java]
