@@ -3,3 +3,4 @@
 [] comments are functions you can factor out
 [] spring... avoid autowired class fields
 [] only access class fields from public methods and make private methods self sufficient by passing all necessary arguments
+[] happy path
