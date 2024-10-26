@@ -710,5 +710,36 @@ We can agree, that this new version of the function is easier to test, understan
 =====================
 ===Use spell checkers!
 
+--------
+example of documenting variables and factoring out expression evaluation
 
+    if !filepath.IsAbs(contextAbs) && filepath.IsAbs(buildInfo.Dockerfile) {
+        oktetoLog.Infof("context is not absolute but dockerfile is absolute")
+    } else if filepath.IsAbs(contextAbs) && filepath.IsAbs(buildInfo.Dockerfile) {
+        buildInfo.Dockerfile, err = filepath.Rel(contextAbs, buildInfo.Dockerfile)
+        if err != nil {
+            return nil, err
+        }
+    } else if !filepath.IsAbs(contextAbs) && !filepath.IsAbs(buildInfo.Dockerfile) {
+        oktetoLog.Infof("context and dockerfile are relative")
+    } else {
+        oktetoLog.Infof("context and dockerfile are relative")
+    }
+ 
+ Notice the last two blocks are identical
 
+    contextIsAbs := filepath.IsAbs(contextAbs)
+    dockerFileIsAbs := filepath.IsAbs(buildInfo.Dockerfile)
+    switch {
+    case contextIsAbs && dockerFileIsAbs:
+        buildInfo.Dockerfile, err = filepath.Rel(contextAbs, buildInfo.Dockerfile)
+        if err != nil {
+            return nil, err
+        }
+    case !contextIsAbs && !dockerFileIsAbs:
+        oktetoLog.Infof("context and dockerfile are relative")
+    case !contextIsAbs && dockerFileIsAbs:
+        oktetoLog.Infof("context is relative but dockerfile is absolute")
+    default: // contextIsAbs && !dockerFileIsAbs
+        oktetoLog.Infof("context is absolute but dockerfile is relative")
+    }
