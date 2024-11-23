@@ -4,23 +4,28 @@
 :revdate:   TODO
 :doctype: book
 :toc:
+:toclevels: 3
 :icons:
 :data-uri:
 :lang: en
 :source-highlighter: rouge
 :sectnums:
+:sectnumlevels: 3
 
 == Introduction
 
 The goal of this short pamphlet is to help you in writing better code by showcasing real code review comments from which we can get valuable insight.
 
-== Comments
+== Review Comments
+
+This is the main section of this text.
+Here I will describe what I consider the general most important aspects I look when doing a code review.
 
 === Naming
 
 Naming things (variables, functions, classes, types, etc.) is a crucial aspect of programming.
 By naming things we define the lexicon of the language in which we will describe our solutions. 
-Variable and type names are the nouns of our lexicon; function names are the verbs.
+The names of variables, constants and types are the nouns of our language; function names are the verbs.
 
 The simplicity, clarity, and elegance of the solution description heavily depends on the definition of the lexicon.
 
@@ -96,16 +101,16 @@ Now, we will study another case of imprecise naming by analyzing the following m
  private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
 ----
 
-Beyond the ambiguity of _check_ (what does it actually check?) the name and the description of the method differs from the description of the `commandFormula` where the idea of formula _evaluation_ is introduced.
+Beyond the ambiguity of _check_ (what does it actually check?) the name and the description of the method differs from the description of the `commandFormula` which introduces the idea of _evaluation_ of the formula.
 
 _Checking_ a formula is not the same as _evaluating_ it.
-Thus, to avoid forcing the reader to go and read the full method implementation to know if the function is _checked_ or _evaluated_ we need to remove the ambiguity from the method's documentation.
+Thus, to avoid forcing the reader to go and read the full method implementation to know if the formula is _checked_ or _evaluated_ we need to remove the ambiguity from the method's documentation.
 In this case, the method checks if a formula complies with all the requirements to be evaluated.
 
 [,java]
 ----
 /**
- * Check if a pre-compiled CommandFormula can be evaluated in the context of a given system.
+ * Checks if a pre-compiled CommandFormula can be evaluated in the context of a given system.
  *
  * @param system
  *      The system in which the formula will be evaluated.
@@ -116,8 +121,8 @@ In this case, the method checks if a formula complies with all the requirements 
  private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
 ----
 
-By reading the new description of the method and its parameters, a better method name emerges: `canEvaluatePrecompiledFormula` (or just `canEvaluateFormula`?).
-The adoption of the new name will allow, at callers side, things like:
+By reading the new description of the method and its parameters, a better method name emerges: `canEvaluatePrecompiledFormula`, `canEvaluateFormula`, or even the French tasty `isEvaluableFormula`.
+The adoption of the new name will allow, at callers side, writing things like
 
 [,java]
 ----
@@ -130,7 +135,6 @@ That reads better than
 ----
 if (checkPreCompiledFormula(system, formula)) then {...}
 ----
-
 
 ==== Being explicit
 
@@ -148,14 +152,12 @@ With the following example we want to stress the importance of being explicit wh
   * ... 
   */
  public CommandCheckResult(CommandCheckResultType type, CommandFormula failingFormula, String failingReason)
- {
-    //...
- }
+{...}
 
  /**
   * SUCCESSFUL check constructor
   */
- public CommandCheckResult() //<1>
+ public CommandCheckResult()
  {
   this(CommandCheckResultType.SUCCESSFUL, null, null);
  }
@@ -164,7 +166,7 @@ With the following example we want to stress the importance of being explicit wh
 
 The above simple Java class represents the result of a _check_ operation on commands. 
 Check can succeed or fail. 
-The class provides two constructors: a main one taking several parameters, and a second that is, what we call, a _comfort constructor_: a constructor wrapping a call to the main one by using some default arguments.
+The class provides two constructors: a main one taking several parameters, and a second that is, what we call, a _comfort constructor_: a constructor wrapping a call to the main one by setting some default arguments.
 
 In this case, the _comfort constructor_ is provided to facilitate the creation of a _success_ result. 
 But, we know that only because the constructor comment says so. 
@@ -181,17 +183,14 @@ The name of the constructor says nothing on the _success_ nature of the created 
 To resume, the call to `CommandCheckResult()` is ambiguous because nothing in the call lets us know if we will get a _success_ or a _fail_ result. 
 How to remove the ambiguity?
 
-One possibility is to rename the constructor, but in Java, that is not possible, constructors are named after the class name.
+We could rename the constructor, but in Java, that is not possible, constructors are named after the class name.
 
 We can add a parameter to the constructor to let the caller explicitly set the nature (success or fail) of the objet to be created. 
 For example something that let's write calls like:
 
 [,java]
 ----
-{
-    //...
-    return CommandCheckResult(CommandCheckResultType.SUCCESSFUL);
-}
+return CommandCheckResult(CommandCheckResultType.SUCCESSFUL);
 ----
 
 The call expression explicitly says "create a successful command check result".
@@ -231,6 +230,13 @@ Then the class can provide a public constant for success results.
  public static final CommandCheckResult SUCCESSFUL_RESULT = new CommandCheckResult(CommandCheckResultType.SUCCESSFUL, null, null);
 ----
 
+Then when we need to return a successful check result object we can simply write
+
+[,java]
+----
+return CommandCheckResult.SUCCESSFUL_RESULT;
+----
+
 NOTE: This is an example on how refactoring code is a virtuous circle of code quality amelioration.
 One refactoring paves the way for other refactoring and so on.
 
@@ -238,6 +244,7 @@ As a corollary, we can say that implicit or tacit properties, behaviors, etc. mu
 Be explicit!
 
 ==== Descriptive names
+As we saw in a previous example, ambiguous verbs like _check_ might hinder the understanding of the code.
 Sometimes, names use not well defined terms and create ambiguity by letting readers imagine their meaning.
 
 The following, is an example of such a case:
@@ -252,7 +259,7 @@ The following, is an example of such a case:
 
 The name `cloneAndIdentifyRepositories`, besides being of the form _doThis**And**DoThat_, uses the not precise term _identifies_.
 In the context of the example, an application working with git repositories, we can understand what _clone_ a repository means, but what about _identify_?
-What is to _identify_ a repository (after cloning it?)? 
+What is to _identify_ a repository (after cloning it?) ? 
 
 These kind of bad naming need to be caught in code reviews because at that time it's still possible to discuss with the author of the code and ask her/him for clarifications. 
 
@@ -277,9 +284,160 @@ Therefore, to go further in our quest for a better method name we could decide t
 
 Again, a refactoring created the opportunity for new refactoring.
 
-==== Avoid shooting your foot with Null 
+==== Use identifiers as documentation 
 
-A null reference is without doubt a _billion-dollar mistake_ as it was https://www.youtube.com/watch?v=ybrQvs4x0Ps[described by Tony Hoare], the guy that actually invented null in 1965!
+The goal of documentation is to help readers understand the code.
+The best documentation of code is the code itself.
+As we said before, when programming we create our own vocabulary to describe the solution we found for the problem at hand.
+That vocabulary is composed by the names we define: variables are nouns, functions are verbs, and we write sentences with them.
+Better are the nouns and verbs, more understandable our sentences will be.
+Needing to write documentation can be seen as the proof of our inability to describe our solution with the language we created.
+
+===== Documenting variables
+
+Naming things is very powerful so why not using that power?
+Why letting the readers of our code to guess, for example, what expressions means?
+
+Let's analyze the following simple example:
+
+[,java]
+----
+private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+{
+    String newArtefactName = newArtefact.getName();
+    if (artefact.getName().equals(newArtefactName))
+    {
+        return true;
+    }
+ 
+    if (artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/"))
+    {
+        return true;
+    }
+
+    return false;
+}
+----
+
+We can understand the goal of the function from its signature.
+It will tell us if a given artifact, whatever that is, must be replaced or not by the new one.
+But by reading the function body, it's not clear how the function decides when an artifact should be replaced or not.
+As readers we are forced to analyze and understand the details of the conditional expressions involved in the decision. 
+So sad.
+
+An easier to read implementation of the function can be obtained by using what I call _documenting variables_.
+
+_Documenting variables_ are variables we create with the purpose of giving a name (a mean) to expressions in our programs.
+In this case, we will name the conditional expressions used in both `if-then` statements in the method.
+By doing so, we will explain to readers the meaning of these expressions.
+
+[,java]
+----
+private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
+{
+	final boolean haveSameName = artefact.getName().equals(newArtefact.getName());
+    final boolean haveSameExportFolder = artefact.getExportFolder() != null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/";
+    
+    return haveSameName || haveSameExportFolder;
+}
+----
+
+From that implementation we, as readers, can even skip reading all lines but the last and clearly understand that an artifact must be replaced when the new one has either the same name or the same exporter folder.
+
+That is the power of _documenting variables_.
+Use it.
+
+Side note: the function could be named `shouldReplaceArtefact` or `mustReplaceArtifact`. 
+By naming like that, callers could write 
+
+[,java]
+----
+`if (mustReplaceArtifact(...)) then ...` 
+----
+
+that reads slightly better than 
+
+[,java]
+----
+`if (isArtefactToReplace(...)) then ...`
+----
+
+===== More examples of documenting variables
+
+[cols="1,1"]  
+|===
+| Original code | Refactored using _documenting variables_
+
+a|
+[source, java]
+----
+for (var paramDef : parameterDefinitions.values())
+{
+    if (!(paramDef.getParameterClass() == ParameterClass.TM_STRUCTURE \|\| paramDef.getParameterType() != ParameterType.DEDUCED))
+    {
+    continue;
+    }
+
+    // ...
+}
+----
+a|
+[source, java]
+----
+for (var paramDef : parameterDefinitions.values())
+{
+    final boolean shouldKeepDefinition =
+        paramDef.getParameterClass() == ParameterClass.TM_STRUCTURE \|\| paramDef.getParameterType() != ParameterType.DEDUCED;
+    if (!shouldKeepDefinition)
+    {
+    continue;
+    }
+
+    // ...
+}
+----
+
+|===
+
+==== Don't try to be creative, use known acronyms and abbreviations
+
+Why trying to invent new abbreviations?
+
+I've found the following line in an OpenAPI definition:
+
+[,yaml]
+----
+$ref: '#/components/schemas/RfcDate'
+----
+
+That simple line is somewhat ironic.
+OpenAPI uses _ref_ to say _reference_.
+Nothing new, almost everybody uses _ref_ to abbreviate _reference_.
+Almost everybody because, as you can see in the example above, someone tried to be creative by using _rfc_ as abbreviation of _reference_, in the very same line!
+
+Why not writing `RefDate`, or better, `ReferenceDate`?
+We are in the XXI century, we do not have storage restrictions that push us to make the economy of a few characters in our source code.
+
+We find something similar in the documentation of the function `gpsDateToCalendarDate`:
+
+[,java]
+----
+  /**
+   * Convert a 10-byte GPS date (dflt origin is 1980-01-06) to a calendar date.
+   * 
+   * @param pDate
+   *          the GPS date to convert
+   * @return the date in calendar format
+   */
+---- 
+
+Did you spot the `dflt` abbreviation of _default_ in the first line?
+
+Just write the full words.
+
+=== Avoid shooting your foot with Null 
+
+A null reference is, without doubt, a _billion-dollar mistake_ as it was https://www.youtube.com/watch?v=ybrQvs4x0Ps[described by Tony Hoare], the guy that actually invented null in 1965!
 
 Most popular languages still include the null reference concept therefore they are, by design, helping you to shoot your foot.
 So, here are some tips on how to avoid using null.
@@ -287,9 +445,9 @@ So, here are some tips on how to avoid using null.
 Of course, the first thing to do is: **do not create null references**.
 I sounds obvious, but we are usually fooled by the simplicity of creating null references (the very same simplicity that pushed Tony Hoare to include them in https://en.wikipedia.org/wiki/ALGOL[ALGOL] more than half a century ago)
 
-Not creating null references can be re-stated as: **never ever make your functions return null**.
+Not creating null references can be rephrased as: **never ever make your functions return null**.
 
-A first example of a function we reviewed:
+A first example of a function I've reviewed:
 
 [,java]
 ----
@@ -386,12 +544,12 @@ Lets see another example:
 Here, the null result is used to signal something bad happened.
 That is not a good way of handling errors (moreover, here we hide an exception under the carpet. So sad).
 
-NOTE: If something bad happens in amethod call then signal the caller by returning an explicit error or an exception.
+NOTE: If something bad happens in a method call then signal the caller by returning an explicit error.
 
 How to proceed?
 Well here we have some choices:
 
-. take advantage on the fact that the return type is a collection (array, list, ...) and return an empty collection. Then let callers to deal with it.
+. take advantage on the fact that the return value is a collection (array, list, ...) and return an empty collection. Then let callers to deal with it.
 
 . return a default date, maybe the origin date.
 
@@ -433,43 +591,8 @@ The returned string must have a special meaning.
 For example, in the above case, the return value in the case of an user without defined role could be the string `"UNKNOWN"` (or `"UNDEFINED"`, or `"NONE"`)
 Sometimes the empty string is a also good candidate.
 
-==== Do not try to be creative, use known acronyms and abbreviations
 
-Why trying to invent new abbreviations?
-
-We found the following line in an OpenAPI definition:
-
-[,yaml]
-----
-$ref: '#/components/schemas/RfcDate'
-----
-
-That simple line is somewhat ironic.
-OpenAPI uses _ref_ to say _reference_.
-Nothing new, almost everybody uses _ref_ to abbreviate _reference_.
-Almost everybody because, as you can see in the example above, someone tried to be creative by using _rfc_ as abbreviation of _reference_, in the very same line!
-
-Why not writing `RefDate`, or better, `ReferenceDate`?
-We are in the XXI century, we do not have storage restrictions that push us to make the economy of a few characters in our source code.
-
-We find something similar in the documentation of the function `gpsDateToCalendarDate` used in the section about (not) using null reference:
-
-[,java]
-----
-  /**
-   * Convert a 10-byte GPS date (dflt origin is 1980-01-06) to a calendar date.
-   * 
-   * @param pDate
-   *          the GPS date to convert
-   * @return the date in calendar format
-   */
----- 
-
-Did you spot the `dflt` abbreviation of _default_ in the first line?
-
-Just write the full words.
-
-==== Be precise when documenting
+=== Be precise when documenting
 
 Even if the best documentation is the names we give to our data elements; sometimes it is nice and necessary to complement with companying comments.
 
@@ -513,81 +636,34 @@ A better documentation could be something like:
  public void setExtrapolationStartDate(String extrapolationStartDate) { ... }
 ----
 
+Another example of imprecise documentation
 
+[,java]
+----
+/** 
+ * Convert a TCP server configuration to an effective TCP server configuration.
+ *
+ * @param tcpConf
+ *    The TCP server configuration.
+ * @return The mapped TcpServerConfig.
+ */
+ public static TcpServerConfig serverConfMapper( ... )
+----
+
+What does mean _effective_ in this context? What are the differences between a _server configuration_ and an _**effective** server configuration_ ?
 
 TODO: example with timeout declaration not specifying the unit (ms, s, ...) 
 
-==== Use identifiers as documentation 
 
-The goal of documentation is to help readers understand the code.
-The best documentation of code is the code itself.
-As we said before, when programming we create our own vocabulary to describe the solution we found for the problem at hand.
-That vocabulary is composed by the names we define: variables are nouns, functions are verbs, and we write sentences with them.
-Better are the nouns and verbs, more understandable our sentences will be.
-Needing to write documentation can be seen as the proof of our inability to describe our solution with the language we created.
+=== Replace comments by function calls
 
-===== Documenting variables
+ #TODO#
 
-Naming things is very powerful so why not using that power?
-Why letting the readers of our code to guess, for example, what expressions means?
+ When you feel the need to write a comment, first try to refactor the code so that any comment becomes superfluous.
 
-Let's analyze the following simple example:
+— Martin Fowler
 
-[,java]
-----
-private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
-{
-    String newArtefactName = newArtefact.getName();
-    if (artefact.getName().equals(newArtefactName))
-    {
-        return true;
-    }
- 
-    if (artefact.getExportFolder() !=null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/"))
-    {
-        return true;
-    }
-
-    return false;
-}
-----
-
-We can understand the goal of the function from its signature.
-It will tell us if a given artifact, whatever that is, must be replaced or not by the new one.
-But by reading the function body, it's not clear how the function decides when an artifact should be replaced or not.
-As readers we are forced to analyze and understand the details of the conditional expressions involved in the decision. 
-So sad.
-
-An easier to read implementation of the function can be obtained by using what we call _documenting variables_.
-
-_Documenting variables_ are variables we create with the purpose of giving a name (a mean) to expressions in our programs.
-In this case, we will name the conditional expressions used in both `if-then` statements in the method.
-By doing so, we will explain to readers the meaning of these expressions.
-
-[,java]
-----
-private static boolean isArtefactToReplace(TestArtefactReferenceEntity artefactRef, TestArtefactReferenceEntity newArtefactRef)
-{
-	final boolean haveSameName = artefact.getName().equals(newArtefact.getName());
-    final boolean haveSameExportFolder = artefact.getExportFolder() != null && artefact.getExportFolder().equals(newArtefact.getExportFolder() + "/";
-    
-    return haveSameName || haveSameExportFolder;
-}
-----
-
-From that implementation we, as readers, can even skip reading all lines but the last and clearly understand that an artifact must be replaced when the new one has either the same name or the same exporter folder.
-
-That is the power of _documenting variables_.
-Use it.
-
-Side note: the function could be named `shouldReplaceArtefact` or `mustReplaceArtifact`. 
-By naming like that, callers could write `if (mustReplaceArtifact(...)) then ...` that reads slightly better than `if (isArtefactToReplace(...)) then ...`
-
-===== Replace comments by function calls
-
- TODO
-
-==== Create ready-to use objects
+=== Create ready-to use objects
 
 Object constructors must return ready-to use valid objects with all mandatory fields initialized.
 By doing so we avoid subtle bugs.
@@ -672,13 +748,13 @@ Immutability always pays.
 
 NOTE: if your object has an `init` method your are in trouble. Setters are another potential symptom of stateful objects.
 
-==== Do not ask for things you will not use
+=== Do not ask for things you will not use
 
 Functions must require, in form of parameters, the strictly necessary data.
-If not, unnecessary cuppling is created between the caller and the callee.
-That unnecessary cuppling will have negative consequences in various aspects of the code like testeability, maintenability, and reusability.
+If not, unnecessary coupling is created between the caller and the callee.
+That unnecessary coupling will have negative consequences in various aspects of the code like testability, maintainability, and reusability.
 
-Let's analyze an example of a low quality function definition:
+Let's analyze an example of a low quality function (a constructor indeed) definition:
 
 [,java]
 ----
@@ -691,26 +767,36 @@ public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactio
 
 Here we require the full `CfdpStubConfig` object but we only use some properties `config.getEntities().getDownload()`.
 
-Let's take a look on how that function signature hinders testeability, reusability and redeability of the function.
+Let's take a look on how that function signature hinders testability, reusability and readability of the function.
+
 In order to test this function, a constructor in fact, we will need to build a `CfdpStubConfig` object and that, depending on the size and complexity of the object can be a challenging task.
-In the same line, every caller of the function must provide a full `CfdpStubConfig` object, this reduces de likely of being able to reuse this method.
-As you might already experienced when reading the above code it is not very easy to followg what the code does.
+
+In the same line, every caller of the function must provide a full `CfdpStubConfig` object, that reduces de likely of being able to reuse this method.
+
+As you might already experienced when reading the above code it's not very easy to follow what the code does.
 To better highlight all these points let`s write a better definition of the function.
 
 [,java]
 ----
-public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePath, String remoteFilestorePath, FinishedTransactionsService finishedTrnsactionsService)
+public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePath, String remoteFilestorePath, FinishedTransactionsService finishedTransactionsService)
 {
-    super(entityId, localFilestorePath, remoteFilestorePath, finishedTrnsactionsService);
+    super(entityId, localFilestorePath, remoteFilestorePath, finishedTransactionsService);
 }
 ----
 
-We can agree, that this new version of the function is easier to test, understand and reuse.
+We can agree, this new version of the function is easier to test, understand and reuse.
 
-=====================
-===Use spell checkers!
+=== Use spell checkers!
+TODO
+
+[,java]
+----
+public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
+{ ... }
+----
 
 --------
+
 example of documenting variables and factoring out expression evaluation
 
     if !filepath.IsAbs(contextAbs) && filepath.IsAbs(buildInfo.Dockerfile) {
