@@ -435,6 +435,31 @@ Did you spot the `dflt` abbreviation of _default_ in the first line?
 
 Just write the full words.
 
+A final example on how writing the full words helps in reading code.
+Let's see the next constant declaration
+
+[,java]
+----
+private static final int RED_CHANNEL = 0x0200;
+----
+
+What does it represent?
+A red channel?
+Not very clear... until we see the next constant declaration
+
+[,java]
+----
+private static final int NOM_CHANNEL = 0x0100;
+----
+
+Better names for these constant are
+
+[,java]
+----
+private static final int NOMINAL_CHANNEL_ID = 0x0100;
+private static final int REDUNDANT_CHANNEL_ID = 0x0200;
+----
+
 === Avoid shooting your foot with Null 
 
 A null reference is, without doubt, a _billion-dollar mistake_ as it was https://www.youtube.com/watch?v=ybrQvs4x0Ps[described by Tony Hoare], the guy that actually invented null in 1965!
