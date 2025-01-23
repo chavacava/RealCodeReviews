@@ -109,7 +109,7 @@ Now, we will study another case of imprecise naming by analyzing the following m
  private boolean checkPreCompiledFormula(String system, CommandFormula commandFormula)
 ----
 
-Beyond the ambiguity of _check_ (what does it actually check?) the name and the description of the method differs from the description of the `commandFormula` which introduces the idea of _evaluation_ of the formula.
+Beyond the ambiguity of _check_ (what does it actually check?) the name and the description of the method differ from the description of the `commandFormula` which introduces the idea of _evaluation_ of the formula.
 
 _Checking_ a formula is not the same as _evaluating_ it.
 Thus, to avoid forcing the reader to go and read the full method implementation to know if the formula is _checked_ or _evaluated_ we need to remove the ambiguity from the method's documentation.
@@ -245,7 +245,7 @@ Then when we need to return a successful check result object we can simply write
 return CommandCheckResult.SUCCESSFUL_RESULT;
 ----
 
-NOTE: This is an example on how refactoring code is a virtuous circle of code quality amelioration.
+NOTE: This is an example on how refactoring code is a virtuous circle of code quality improvement.
 One refactoring paves the way for other refactoring and so on.
 
 As a corollary, we can say that implicit or tacit properties, behaviors, etc. must be totally avoided when coding.
@@ -372,11 +372,7 @@ that reads slightly better than
 
 ===== More examples of documenting variables
 
-[cols="1,1"]  
-|===
-| Original code | Refactored using _documenting variables_
-
-a|
+Original code:
 [source, java]
 ----
 for (var paramDef : parameterDefinitions.values())
@@ -389,7 +385,9 @@ for (var paramDef : parameterDefinitions.values())
     // ...
 }
 ----
-a|
+
+Refactored using _documenting variables_
+
 [source, java]
 ----
 for (var paramDef : parameterDefinitions.values())
@@ -400,12 +398,9 @@ for (var paramDef : parameterDefinitions.values())
     {
     continue;
     }
-
     // ...
 }
 ----
-
-|===
 
 ==== Don't try to be creative, use known acronyms and abbreviations
 
@@ -689,12 +684,12 @@ TODO: example with timeout declaration not specifying the unit (ms, s, ...)
 
 
 === Replace comments by function calls
+> When you feel the need to write a comment, 
+> first try to refactor the code so that 
+> any comment becomes superfluous.
+> -- Martin Fowler
 
- #TODO#
-
- When you feel the need to write a comment, first try to refactor the code so that any comment becomes superfluous.
-
-— Martin Fowler
+TODO
 
 === Create ready-to use objects
 
@@ -773,7 +768,7 @@ How?
 The compiler is, always, our best friend: we need to make the compiler force us to create valid, ready to use, objects.
 That is very easy: make constructors demand all necessary information to build complete objects.
 
-NOTE: you may argue that some frameworks requires defining empty constructors with corresponding setters. That's okay, but remember: nothing prevents you to define and use a full fledged constructor.
+NOTE: Even if some frameworks require defining empty constructors with corresponding setters, nothing prevents you to define and use a full fledged constructor.
 
 The general approach can be stated as: avoid defining objects able to transit multiple states.
 Try creating immutable objects.
