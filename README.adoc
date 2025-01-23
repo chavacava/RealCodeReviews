@@ -12,9 +12,26 @@
 :sectnums:
 :sectnumlevels: 3
 
+Shield: [![CC BY-NC-ND 4.0][cc-by-nc-nd-shield]][cc-by-nc-nd]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License][cc-by-nc-nd].
+
+[![CC BY-NC-ND 4.0][cc-by-nc-nd-image]][cc-by-nc-nd]
+
+[cc-by-nc-nd]: http://creativecommons.org/licenses/by-nc-nd/4.0/
+[cc-by-nc-nd-image]: https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png
+[cc-by-nc-nd-shield]: https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg
+
 == Introduction
 
 The goal of this short pamphlet is to help you in writing better code by showcasing real code review comments from which we can get valuable insight.
+
+[NOTE]
+====
+This content is free of AI-generated text.
+All hallucinations are from the author.
+====
 
 == Review Comments
 
@@ -812,45 +829,5 @@ public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePat
 We can agree, this new version of the function is easier to test, understand and reuse.
 
 === Use spell checkers!
+
 TODO
-
-[,java]
-----
-public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
-{ ... }
-----
-
---------
-
-example of documenting variables and factoring out expression evaluation
-
-    if !filepath.IsAbs(contextAbs) && filepath.IsAbs(buildInfo.Dockerfile) {
-        oktetoLog.Infof("context is not absolute but dockerfile is absolute")
-    } else if filepath.IsAbs(contextAbs) && filepath.IsAbs(buildInfo.Dockerfile) {
-        buildInfo.Dockerfile, err = filepath.Rel(contextAbs, buildInfo.Dockerfile)
-        if err != nil {
-            return nil, err
-        }
-    } else if !filepath.IsAbs(contextAbs) && !filepath.IsAbs(buildInfo.Dockerfile) {
-        oktetoLog.Infof("context and dockerfile are relative")
-    } else {
-        oktetoLog.Infof("context and dockerfile are relative")
-    }
- 
- Notice the last two blocks are identical
-
-    contextIsAbs := filepath.IsAbs(contextAbs)
-    dockerFileIsAbs := filepath.IsAbs(buildInfo.Dockerfile)
-    switch {
-    case contextIsAbs && dockerFileIsAbs:
-        buildInfo.Dockerfile, err = filepath.Rel(contextAbs, buildInfo.Dockerfile)
-        if err != nil {
-            return nil, err
-        }
-    case !contextIsAbs && !dockerFileIsAbs:
-        oktetoLog.Infof("context and dockerfile are relative")
-    case !contextIsAbs && dockerFileIsAbs:
-        oktetoLog.Infof("context is relative but dockerfile is absolute")
-    default: // contextIsAbs && !dockerFileIsAbs
-        oktetoLog.Infof("context is absolute but dockerfile is relative")
-    }
