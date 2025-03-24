@@ -814,6 +814,77 @@ public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePat
 
 We can agree, this new version of the function is easier to test, understand and reuse.
 
+=== Avoid flag parameters
+
+https://martinfowler.com/bliki/FlagArgument.html[Flag parameters] are Boolean function parameters that are there to make the function behave differently depending on flag's value.
+
+Flag parameters can be viewed as the cause and the consequence of functions doing too much things.
+Such functions must be avoided because they add unnecessary complexity thus they are hard to understand, use, and test.
+
+Let's see an example of a flag parameter.
+The function is used to add a new _part_ into a _whole_ we are aggregating.
+The parameter `isLastPart` is a flag parameter.
+It indicates to the function if the part we are asking to add is the last one or not.
+
+[,java]
+----
+  /**
+   * Adds a LDT part to the context. If last part of the LDT, return the source packet.
+   * Otherwise return Optional.empty()
+   *
+   * @param ldtId      key to identify the LDT
+   * @param sequenceNb the packet sequence number
+   * @param isLastPart true if this part is the last one (from TM(13,3))
+   * @param packet     the packet bytes (PUS13 payload, not the whole PUS13 TM)
+   * @return the aggregated source packet (may be Optional.empty())
+   */
+  Optional<ByteBuffer> addPart(LdtId ldtId, long sequenceNb, byte[] packet, boolean isLastPart);
+----
+
+Notice how the return value of the function is somewhat overcomplicated because the funtion will return different values depending on the part being added to be the last or not.
+Of course, the body of the function, not shown here for the sake of brevity, has some conditionals to handle the possible values of the flag parameter; that means hard to read and test method.
+Another consequence of the complexity of the return value is complexity at the caller site where we need to handle both possibilities: an empty return or a non empty one.
+
+The good news is that flag parameters can be easily removed.
+The usual method is by creating two methods, one for each behavior.
+
+Let's refactor the above method to remove the flag parameter.
+We will split the method into two, simpler, methods.
+
+[,java]
+----
+  /**
+   * Adds a LDT part to the context.
+   *
+   * @param ldtId      key to identify the LDT
+   * @param sequenceNb the packet sequence number
+   * @param packet     the packet bytes (PUS13 payload, not the whole PUS13 TM)
+   */
+  void addPart(LdtId ldtId, long sequenceNb, byte[] packet);
+----
+
+and
+
+[,java]
+----
+  /**
+   * Adds the last LDT part to the context.
+   *
+   * @param ldtId      key to identify the LDT
+   * @param sequenceNb the packet sequence number
+   * @param packet     the packet bytes (PUS13 payload, not the whole PUS13 TM)
+   * @return the aggregated source packet
+   */
+  ByteBuffer addLastPart(LdtId ldtId, long sequenceNb, byte[] packet);
+----
+
+The methods are simpler thus easier to use.
+We call `addPart` for all parts except the last one for which we call... `addLastPart` that returns the _whole_ aggregation.
+
+So, each time you are willing to add boolean parameter to a function, check twice if it isn't actually a flag parameter and how you can avoid it.
+
+NOTE: Methods must do one single thing. Not two, one.
+  
 === Use spell checkers!
 
 TODO
