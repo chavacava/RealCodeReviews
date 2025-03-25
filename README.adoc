@@ -814,6 +814,104 @@ public StubbedRemoteCfdpDownloadEntity(String entityId, String localFilestorePat
 
 We can agree, this new version of the function is easier to test, understand and reuse.
 
+=== Avoid unnecessary re-evaluation of expressions
+
+The function of the previous example, besides requiring more information than necessary its signature has another evident problem: it unnecessarily revaluates the same expression three times.
+Let's take a look to the function again:
+
+[,java]
+----
+public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
+{
+    super(
+        config.getEntities().getDownload().getEntityId(), 
+        config.getEntities().getDownload().getLocalFilestorePath(),
+        config.getEntities().getDownload().getRemoteFilestorePath(), 
+        finishedTrnsactionsService );
+}
+----
+
+Did you spotted the repeating `config.getEntities().getDownload()` ? (I hope so because I've reformated the code to make it evident) 
+Computing the same expression three times is a waste of computing resources and also hinders code redeability.
+We can fix that by storing the evaluation result in a local variable
+
+[,java]
+----
+public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactionsService finishedTrnsactionsService)
+{
+    var entityDownloadConfig = config.getEntities().getDownload();
+    super(
+        entityDownloadConfig.getEntityId(), 
+        entityDownloadConfig.getLocalFilestorePath(),
+        entityDownloadConfig.getRemoteFilestorePath(), 
+        finishedTrnsactionsService );
+}
+----
+
+As allways in computing, it's a trade-off between CPU and memory.
+Here we choose to use memory to economize CPU cycles (and executable size)
+
+Unfortunately, auto-completion functionality of IDEs make these repetitions very easy to introduce in our code.
+Let's see another, more problematic, example:
+
+[,java]
+----
+List<ParameterMetric> paramsMetrics = new ArrayList<>();
+String packetName = dtpSpecificParams.getKey();
+ParametersExtraction paramExtraction = dtpSpecificParams.getValue();
+for (ParameterExtractionInfo paramExtractionInfo : paramExtraction.getParameters())
+{
+    String metricName = paramExtractionInfo.getAssociatedMetric();
+    int value = counterRepository.getSpecificTmParametersCounters(
+        paramExtraction.getSource(), 
+        paramExtraction.getService(),
+        paramExtraction.getSubService(), 
+        paramExtraction.getStructureId(), 
+        metricName);
+    ParameterMetric paramMetric = new ParameterMetric(metricName, value);
+    paramsMetrics.add(paramMetric);
+}
+
+specificTmParametersMetrics.put(packetName, paramsMetrics);
+----
+
+Here the repetition of the evaluation of expressions is not lexicographically evident.
+I mean, we do not see, as in the previous example, the same sequence of function calls repeted in the source code.
+Here, the repetition takes place _dynamically_.
+Indeed, the body of the loop has calls `paramExtraction.getSource()`, `paramExtraction.getService()`,
+`paramExtraction.getSubService()` and `paramExtraction.getStructureId()` that will evaluate to the same values at each iteration of the loop.
+That is because `paramExtraction` does not depend on the loop variable (`paramExtractionInfo`) thus it's constant the whole loop execution.
+The fix to these kind of problems is simple: move constant values out of the loop. 
+
+[,java]
+----
+var dtpParamsValue = dtpSpecificParams.getValue();
+var paramSource = dtpParamsValue.getSource();
+var paramService = dtpParamsValue.getService();
+var paramSubservice = dtpParamsValue.getSubService();
+var paramStructureId = dtpParamsValue.getStructureId();
+var paramsMetrics = new ArrayList<>();
+for (ParameterExtractionInfo dtpParamsValueInfo : dtpParamsValue.getParameters())
+{
+    var metricName = dtpParamsValueInfo.getAssociatedMetric();
+    var value = counterRepository.getSpecificTmParametersCounters(
+        paramSource, 
+        paramService, 
+        paramSubservice, 
+        paramStructureId, 
+        metricName);
+    var paramMetric = new ParameterMetric(metricName, value);
+    paramsMetrics.add(paramMetric);
+}
+
+var packetName = dtpSpecificParams.getKey();
+specificTmParametersMetrics.put(packetName, paramsMetrics);
+----
+
+Now, the loop body only evaluates expressions that might vary at each iteration while constant values, evaluated before entering the loop, are likely stored in CPU registries ready to be accessed.
+
+Notice that in the refactored version, we moved the definition of `packetName` near to its utilisation, like that we ameliorate "data locality" and redeability.
+
 === Avoid flag parameters
 
 https://martinfowler.com/bliki/FlagArgument.html[Flag parameters] are Boolean function parameters that are there to make the function behave differently depending on flag's value.
