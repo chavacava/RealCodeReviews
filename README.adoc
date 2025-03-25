@@ -816,7 +816,7 @@ We can agree, this new version of the function is easier to test, understand and
 
 === Avoid unnecessary re-evaluation of expressions
 
-The function of the previous example, besides requiring more information than necessary its signature has another evident problem: it unnecessarily revaluates the same expression three times.
+The function of the previous example, besides requiring more information than necessary in its signature has another evident problem: it unnecessarily revaluates the same expression three times.
 Let's take a look to the function again:
 
 [,java]
@@ -831,7 +831,7 @@ public StubbedRemoteCfdpDownloadEntity(CfdpStubConfig config, FinishedTransactio
 }
 ----
 
-Did you spotted the repeating `config.getEntities().getDownload()` ? (I hope so because I've reformated the code to make it evident) 
+Did you spotted the repeating `config.getEntities().getDownload()` ? (I'm sure you did, I've reformated the code to make it very evident) 
 Computing the same expression three times is a waste of computing resources and also hinders code redeability.
 We can fix that by storing the evaluation result in a local variable
 
